@@ -1,3 +1,5 @@
+import os
+import logging
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 import httpx
@@ -6,64 +8,59 @@ import string
 import asyncio
 import uvicorn
 
+# 1. SETUP LOGGING (Check Render "Logs" tab to see these)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = FastAPI()
 
-# --- CONFIGURATION ---
+# --- CONFIG ---
 ULVIS_API = "https://ulvis.net/API/write/get"
-TIMEOUT = 15.0  # Seconds
+TIMEOUT = 20.0  # Extended timeout
 
 def generate_alias(length=4):
-    """Generate random 4-char string (A-Z, a-z, 0-9)"""
     chars = string.ascii_letters + string.digits
     return ''.join(random.choice(chars) for _ in range(length))
 
 async def create_ulvis_link(client: httpx.AsyncClient, long_url: str, retry_count=0):
-    """
-    Async function to contact Ulvis.
-    Handles retries, headers, and concurrency.
-    """
-    # Prevent infinite recursion
-    if retry_count > 3:
-        return {
-            "success": False, 
-            "error": "Failed to generate unique alias after 3 attempts", 
-            "original_url": long_url
-        }
+    if retry_count > 2:
+        return {"success": False, "error": "Could not generate unique alias."}
 
     alias = generate_alias(4)
-
+    
     params = {
         "url": long_url,
         "type": "json",
-        "uses": "1",       # One-Time Link
-        "private": "1",    # Private
-        "custom": alias    # Custom 4-char code
+        "uses": "1",
+        "private": "1",
+        "custom": alias
     }
 
-    # Fake Browser Headers to avoid Bot Detection
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "application/json"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
 
     try:
+        logger.info(f"Sending request to Ulvis for {long_url} with alias {alias}")
+        
         response = await client.get(ULVIS_API, params=params, headers=headers, timeout=TIMEOUT)
         
-        # Try to parse JSON (Ulvis sometimes returns HTML error pages if blocked)
+        # Log the raw response for debugging
+        logger.info(f"Ulvis Response Code: {response.status_code}")
+        
         try:
             data = response.json()
         except:
+            # If Ulvis returns HTML (Cloudflare block), return the text for debugging
             return {
                 "success": False, 
-                "error": "Ulvis returned invalid JSON (IP likely blocked)", 
-                "original_url": long_url
+                "error": "Ulvis returned invalid JSON. Use a VPN/Proxy or different host.", 
+                "raw_response": response.text[:200]
             }
 
-        # Check Success (Handles 1, "1", true, "true")
+        # Success Check
         success_flag = str(data.get("success", "")).lower()
-        is_success = success_flag in ["1", "true"]
-
-        if is_success:
+        if success_flag in ["1", "true"]:
             return {
                 "success": True,
                 "original_url": long_url,
@@ -71,40 +68,30 @@ async def create_ulvis_link(client: httpx.AsyncClient, long_url: str, retry_coun
                 "alias": alias
             }
         else:
-            # Logic: If alias is taken, retry with new alias
+            # Retry logic
             error_msg = str(data.get("error", {}))
             if "taken" in error_msg.lower():
+                logger.info("Alias taken, retrying...")
                 return await create_ulvis_link(client, long_url, retry_count + 1)
             
-            return {
-                "success": False, 
-                "error": error_msg, 
-                "original_url": long_url
-            }
+            return {"success": False, "error": error_msg}
 
     except httpx.TimeoutException:
-        return {"success": False, "error": "Request Timed Out", "original_url": long_url}
+        return {"success": False, "error": "Request Timed Out"}
     except Exception as e:
-        return {"success": False, "error": str(e), "original_url": long_url}
+        return {"success": False, "error": str(e)}
 
-# --- ENDPOINTS ---
+# --- ROUTES ---
 
 @app.get("/")
 async def home():
-    return {
-        "status": "Online", 
-        "usage": "/short?url=https://example.com",
-        "bulk": "POST /bulk with json {'urls': ['...']}"
-    }
+    # If this loads, your server is working!
+    return {"status": "Online", "msg": "Server is running correctly"}
 
 @app.get("/short")
 async def short_url(url: str):
-    """
-    Single URL Shortener
-    Usage: GET /short?url=https://google.com
-    """
     if not url:
-        return JSONResponse(status_code=400, content={"error": "Missing 'url' parameter"})
+        return JSONResponse(status_code=400, content={"error": "Missing url"})
 
     if not url.startswith("http"):
         url = "https://" + url
@@ -112,36 +99,26 @@ async def short_url(url: str):
     async with httpx.AsyncClient() as client:
         result = await create_ulvis_link(client, url)
     
-    status_code = 200 if result["success"] else 502
-    return JSONResponse(status_code=status_code, content=result)
+    # ALWAYS return 200 or 400. NEVER 502.
+    status = 200 if result["success"] else 400
+    return JSONResponse(status_code=status, content=result)
 
 @app.post("/bulk")
 async def bulk_short(request: Request):
-    """
-    Concurrent Bulk Shortener
-    Accepts JSON: {"urls": ["url1", "url2"]}
-    """
     try:
         body = await request.json()
-        urls = body.get("urls")
+        urls = body.get("urls", [])
     except:
-        return JSONResponse(status_code=400, content={"error": "Invalid JSON body"})
+        return JSONResponse(status_code=400, content={"error": "Invalid JSON"})
 
-    if not urls or not isinstance(urls, list):
-        return JSONResponse(status_code=400, content={"error": "Missing 'urls' list in JSON"})
-
-    # Process ALL urls at the exact same time (Parallel)
     async with httpx.AsyncClient() as client:
         tasks = [create_ulvis_link(client, u) for u in urls]
         results = await asyncio.gather(*tasks)
 
-    return {
-        "success": True,
-        "total_processed": len(results),
-        "results": results
-    }
+    return {"success": True, "results": results}
 
 # --- RUNNER ---
 if __name__ == "__main__":
-    # Workers=4 allows utilizing multiple CPU cores
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, workers=4)
+    # This block handles the PORT automatically
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
