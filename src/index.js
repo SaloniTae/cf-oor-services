@@ -2,14 +2,17 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
-    // 1. FAST HEADERS (CORS allowed)
-    const headers = {
+    // 1. SETUP HEADERS
+    const corsHeaders = {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     };
 
-    // 2. GENERATOR: 4-Char Alphanumeric (A-Z, a-z, 0-9)
+    // Handle Preflight
+    if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+    // 2. GENERATOR FUNCTION
     function generateAlias(length = 4) {
       const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let result = '';
@@ -19,106 +22,104 @@ export default {
       return result;
     }
 
-    // 3. THE CORE FUNCTION (Replicates your Python logic)
+    // 3. API CALLER (Mimics Python Requests exactly)
     async function createUlvisLink(longUrl, retryCount = 0) {
-      // Stop infinite loops if API is acting up
-      if (retryCount > 3) {
-        throw new Error("Failed to generate unique alias after 3 attempts");
-      }
+      if (retryCount > 2) throw new Error("Ulvis API is failing after 3 retries.");
 
       const alias = generateAlias(4);
 
-      // Construct URL parameters exactly like your Python script
+      // EXACT parameters from your Python script
       const params = new URLSearchParams({
         url: longUrl,
         type: 'json',
-        uses: '1',       // ONE TIME LINK
-        private: '1',    // PRIVATE
-        custom: alias    // 4-CHAR ALIAS
+        uses: '1',       // One time
+        private: '1',    // Private
+        custom: alias    // Custom Alias
       });
 
-      // Set a timeout so we don't hang if Ulvis is down (5 seconds max)
+      // INCREASED TIMEOUT: 15 Seconds (Python waits forever, Workers need a limit)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => controller.abort(), 30000); 
 
       try {
-        const apiResponse = await fetch(`https://ulvis.net/API/write/get?${params.toString()}`, {
+        const apiUrl = `https://ulvis.net/API/write/get?${params.toString()}`;
+        
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            // CRITICAL: Pretend to be a real Chrome browser
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/javascript, */*; q=0.01',
+            'Referer': 'https://ulvis.net/',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
           signal: controller.signal
         });
+
         clearTimeout(timeoutId);
 
-        const data = await apiResponse.json();
+        // Capture raw text first to debug if JSON fails
+        const rawText = await response.text();
+        
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch (e) {
+          // If Ulvis returns HTML error instead of JSON
+          throw new Error(`Ulvis returned invalid JSON: ${rawText.substring(0, 50)}...`);
+        }
 
-        // Check Success (Ulvis returns success: true or 1)
-        if (data.success == true || data.success == "1") {
+        // Soft check for success (handles "1", 1, true, "true")
+        if (data.success == 1 || data.success == true || data.success == "1") {
           return {
             success: true,
             original_url: longUrl,
             short_url: data.data.url,
-            alias: alias,
-            one_time_use: true
+            alias: alias
           };
         } else {
-          // If error is "alias already taken", retry recursively
-          if (data.error && data.error.msg && data.error.msg.includes("taken")) {
+          // If alias is taken, Retry
+          if (data.error && JSON.stringify(data.error).includes("taken")) {
             return await createUlvisLink(longUrl, retryCount + 1);
           }
-          throw new Error(data.error ? data.error.msg : "Unknown API error");
+          throw new Error(data.error ? data.error.msg : "Unknown API Error");
         }
+
       } catch (error) {
-        // If it was a timeout or network error
-        if (error.name === 'AbortError') throw new Error("Ulvis API Timeout");
+        clearTimeout(timeoutId);
+        if (error.name === 'AbortError') throw new Error("Ulvis API Timeout (Server too slow - 15s limit)");
         throw error;
       }
     }
 
-    // 4. ROUTE: /short?url=...
+    // 4. ROUTE HANDLER
     if (url.pathname === '/short') {
       const targetUrl = url.searchParams.get('url');
+      if (!targetUrl) return new Response(JSON.stringify({ error: 'Missing url' }), { status: 400, headers: corsHeaders });
 
-      if (!targetUrl) {
-        return new Response(JSON.stringify({ success: false, error: 'Missing ?url= parameter' }), { status: 400, headers });
-      }
+      const finalUrl = targetUrl.startsWith('http') ? targetUrl : `https://${targetUrl}`;
 
       try {
-        // Add https if missing
-        const finalUrl = targetUrl.startsWith('http') ? targetUrl : `https://${targetUrl}`;
-        
-        // Execute logic
         const result = await createUlvisLink(finalUrl);
-        
-        return new Response(JSON.stringify(result), { status: 200, headers });
-
-      } catch (err) {
+        return new Response(JSON.stringify(result), { status: 200, headers: corsHeaders });
+      } catch (e) {
         return new Response(JSON.stringify({ 
           success: false, 
-          error: err.message,
-          original_url: targetUrl
-        }), { status: 502, headers });
+          error: e.message,
+          tip: "If timeout persists, Ulvis might be blocking Cloudflare IPs." 
+        }), { status: 502, headers: corsHeaders });
       }
     }
 
-    // 5. ROUTE: /bulk (Concurrent Handling)
+    // 5. BULK HANDLER
     if (url.pathname === '/bulk' && request.method === 'POST') {
-      try {
-        const body = await request.json();
-        if (!body.urls || !Array.isArray(body.urls)) throw new Error("Missing 'urls' array");
-
-        // Promise.all sends ALL requests at the exact same time (Concurrent)
-        const results = await Promise.all(body.urls.map(u => 
-          createUlvisLink(u).catch(e => ({ success: false, url: u, error: e.message }))
-        ));
-
-        return new Response(JSON.stringify({ success: true, results }), { headers });
-      } catch (e) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 400, headers });
-      }
+      const body = await request.json();
+      const results = await Promise.all(body.urls.map(u => 
+        createUlvisLink(u).catch(e => ({ success: false, url: u, error: e.message }))
+      ));
+      return new Response(JSON.stringify({ success: true, results }), { headers: corsHeaders });
     }
 
-    // Default Home Response
-    return new Response(JSON.stringify({
-      status: "Online",
-      usage: "/short?url=https://google.com"
-    }), { headers });
+    return new Response("Ulvis Worker Ready", { headers: corsHeaders });
   }
 };
