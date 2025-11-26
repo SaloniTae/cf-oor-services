@@ -8,65 +8,59 @@ export async function onRequestGet(context) {
     });
   }
 
-  // 1. Setup 4-Char Alias
+  // 1. Generate Alias
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let alias = '';
   for (let i = 0; i < 4; i++) alias += chars.charAt(Math.floor(Math.random() * chars.length));
 
-  // 2. Prepare Ulvis Parameters
-  const ulvisUrl = new URL("https://ulvis.net/API/write/get");
-  ulvisUrl.searchParams.set("url", targetUrl);
-  ulvisUrl.searchParams.set("custom", alias);
-  ulvisUrl.searchParams.set("private", "1");
-  ulvisUrl.searchParams.set("uses", "1");
-  ulvisUrl.searchParams.set("type", "json");
+  // 2. Call Ulvis
+  const ulvisUrl = `https://ulvis.net/API/write/get?url=${encodeURIComponent(targetUrl)}&custom=${alias}&private=1&uses=1&type=json`;
 
   try {
-    // 3. Call Ulvis (with error capturing)
-    const response = await fetch(ulvisUrl.toString(), {
-      method: "GET",
+    const response = await fetch(ulvisUrl, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-        "Referer": "https://ulvis.net"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
       }
     });
 
-    // 4. Capture Raw Text (To show EXACT error if valid JSON fails)
     const rawText = await response.text();
-
+    
     try {
       const data = JSON.parse(rawText);
-      
-      // Check if Ulvis says success
+
+      // CHECK SUCCESS (Handles 1, "1", true, "true")
       if (data.success == 1 || data.success == true || data.success == "true") {
+        
+        // FIX: Force create the URL if API returns it empty
+        let finalShortUrl = `https://ulvis.net/${alias}`;
+        if (data.data && data.data.url) {
+            finalShortUrl = data.data.url;
+        }
+
         return new Response(JSON.stringify({
           success: true,
           original_url: targetUrl,
-          short_url: data.data.url,
+          short_url: finalShortUrl, // Now guaranteed to exist
           alias: alias
         }), { headers: { "Content-Type": "application/json" } });
+
       } else {
-        // Logic failure (e.g. Alias taken)
         return new Response(JSON.stringify({
           success: false,
-          error: data.error || "Unknown API Error",
+          error: data.error || "API returned failure",
           raw_response: data
         }), { status: 400, headers: { "Content-Type": "application/json" } });
       }
 
     } catch (e) {
-      // 5. JSON PARSE FAILED -> Show Raw HTML Error
-      // This usually happens when Cloudflare blocks the IP
       return new Response(JSON.stringify({
         success: false,
-        error: "Failed to parse JSON. Likely blocked by Cloudflare/Ulvis.",
-        raw_error_preview: rawText.substring(0, 500) // Shows the first 500 chars of the HTML error
+        error: "Failed to parse JSON. Likely blocked.",
+        raw_preview: rawText.substring(0, 200)
       }), { status: 502, headers: { "Content-Type": "application/json" } });
     }
 
   } catch (err) {
-    // Network failure
     return new Response(JSON.stringify({ success: false, error: err.message }), {
       status: 500, headers: { "Content-Type": "application/json" }
     });
