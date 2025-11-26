@@ -15,6 +15,8 @@
             --border: #2c2c2e;
             --danger: #ff453a;
             --success: #30d158;
+            --btn-white: #ffffff;
+            --btn-secondary: #2c2c2e;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; }
@@ -34,53 +36,25 @@
         .app-wrapper { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 20px; }
 
         /* --- LOGO --- */
-        .logo-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 10px;
-        }
-        .logo-img {
-            height: 45px; /* Adjust size if needed */
-            width: auto;
-            display: block;
-        }
+        .logo-container { display: flex; justify-content: center; margin-bottom: 10px; }
+        .logo-img { height: 45px; width: auto; display: block; }
 
-        /* --- NAVIGATION --- */
+        /* --- NAV --- */
         .nav-container {
-            background-color: var(--nav-bg);
-            border-radius: 16px;
-            padding: 6px;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 4px;
-            border: 1px solid var(--border);
+            background-color: var(--nav-bg); border-radius: 16px; padding: 6px;
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; border: 1px solid var(--border);
         }
         .nav-item {
-            padding: 12px 0;
-            text-align: center;
-            color: var(--text-dim);
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: 10px;
-            transition: all 0.2s ease;
+            padding: 12px 0; text-align: center; color: var(--text-dim); font-size: 13px; font-weight: 600;
+            cursor: pointer; border-radius: 10px; transition: all 0.2s ease;
         }
-        .nav-item.active {
-            background-color: var(--active-tab);
-            color: var(--text);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        }
+        .nav-item.active { background-color: var(--active-tab); color: var(--text); box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
 
         /* --- CARDS --- */
         .view-section { display: none; animation: fadeIn 0.3s ease; }
         .view-section.active { display: block; }
 
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 20px;
-        }
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 18px; padding: 20px; }
 
         label { display: block; color: var(--text-dim); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; margin-left: 4px; }
 
@@ -90,11 +64,17 @@
         input:focus, textarea:focus { border-color: #666; }
         textarea { resize: none; height: 120px; }
 
+        /* --- BUTTONS --- */
         .btn {
-            width: 100%; background: white; color: black; border: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 16px; margin-top: 15px; cursor: pointer; display: flex; justify-content: center; align-items: center;
+            width: 100%; background: var(--btn-white); color: black; border: none; padding: 16px; border-radius: 12px; font-weight: 700; font-size: 16px; margin-top: 15px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s;
         }
         .btn:active { opacity: 0.8; transform: scale(0.98); }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-secondary {
+            background: var(--btn-secondary); color: white; margin-top: 10px; display: none;
+        }
+        .btn-secondary.show { display: flex; }
 
         /* --- RESULTS --- */
         .result-box { margin-top: 20px; background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: none; }
@@ -104,23 +84,13 @@
         .status-fresh { background: rgba(48, 209, 88, 0.2); color: var(--success); }
         .status-used { background: rgba(255, 69, 58, 0.2); color: var(--danger); }
 
-        /* --- COPY UI --- */
         .copy-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
         .short-link { font-family: monospace; color: white; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
         .copy-btn {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.2s;
+            background: rgba(255,255,255,0.1); border: none; border-radius: 8px; cursor: pointer; padding: 8px; display: flex; align-items: center; justify-content: center; transition: 0.2s;
         }
         .copy-btn:active { background: rgba(255,255,255,0.3); }
-        /* Modern Clipboard Icon */
         .copy-btn svg { width: 18px; height: 18px; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
         /* --- BULK LIST --- */
@@ -129,24 +99,14 @@
 
         /* --- TOAST --- */
         #toast {
-            visibility: hidden;
-            min-width: 200px;
-            background-color: #333;
-            color: #fff;
-            text-align: center;
-            border-radius: 50px;
-            padding: 12px;
-            position: fixed;
-            z-index: 100;
-            left: 50%;
-            bottom: 30px;
-            transform: translateX(-50%);
-            font-size: 14px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            opacity: 0;
-            transition: opacity 0.3s, bottom 0.3s;
+            visibility: hidden; min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 12px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s, bottom 0.3s; font-weight: 600;
         }
         #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+        
+        /* Error Style for Toast */
+        #toast.error { background-color: var(--danger); color: white; }
+        /* Success Style for Toast */
+        #toast.success { background-color: #333; color: white; }
 
         /* --- FOOTER --- */
         footer { margin-top: 40px; text-align: center; font-size: 14px; color: #888; font-weight: 500; }
@@ -159,19 +119,17 @@
 <body>
 
     <div class="app-wrapper">
-        <!-- LOGO -->
         <div class="logo-container">
             <img src="https://res.cloudinary.com/djzfoukhz/image/upload/oskspw1vm2hyk8qn0yjo.png" alt="Logo" class="logo-img">
         </div>
 
-        <!-- NAV -->
         <div class="nav-container">
             <div class="nav-item active" onclick="switchTab('create', this)">Create</div>
             <div class="nav-item" onclick="switchTab('verify', this)">Verify</div>
             <div class="nav-item" onclick="switchTab('bulk', this)">Bulk</div>
         </div>
 
-        <!-- TAB 1: CREATE -->
+        <!-- CREATE -->
         <div id="view-create" class="view-section active">
             <div class="card">
                 <label>Destination URL</label>
@@ -186,7 +144,6 @@
                     <div class="copy-row">
                         <span id="out-link" class="short-link">...</span>
                         <button class="copy-btn" onclick="copyToClip('out-link')">
-                            <!-- Feather Icon: Copy -->
                             <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                         </button>
                     </div>
@@ -195,7 +152,7 @@
             </div>
         </div>
 
-        <!-- TAB 2: VERIFY -->
+        <!-- VERIFY -->
         <div id="view-verify" class="view-section">
             <div class="card">
                 <label>Short Link</label>
@@ -217,7 +174,7 @@
             </div>
         </div>
 
-        <!-- TAB 3: BULK -->
+        <!-- BULK -->
         <div id="view-bulk" class="view-section">
             <div class="card">
                 <label>Paste URLs (One per line)</label>
@@ -226,41 +183,48 @@
                     <span class="btn-text">Process Batch</span>
                     <div class="spinner"></div>
                 </button>
+
+                <!-- NEW: COPY ALL BUTTON -->
+                <button class="btn btn-secondary" id="btn-bulk-copy" onclick="copyBulkAll()">
+                    <span>Copy All Links</span>
+                </button>
             </div>
             <ul id="bulk-list" class="bulk-ul"></ul>
         </div>
 
-        <footer>
-            <div id="copyright"></div>
-        </footer>
+        <footer><div id="copyright"></div></footer>
     </div>
 
     <!-- TOAST -->
     <div id="toast">Copied to clipboard</div>
 
     <script>
-        // --- NAVIGATION ---
+        // --- GLOBAL VARIABLES ---
+        let bulkResultsCache = []; // Stores generated bulk links
+
+        // --- UI ---
         function switchTab(tabId, navElement) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.getElementById('view-' + tabId).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
             navElement.classList.add('active');
         }
-
-        // --- DYNAMIC FOOTER ---
         document.getElementById('copyright').innerText = `© ${new Date().getFullYear()} OORverse. All rights reserved.`;
 
-        // --- UTILS ---
-        function showToast(message = "Copied to clipboard") {
+        // --- TOAST (Error & Success) ---
+        function showToast(message = "Copied to clipboard", type = "success") {
             const toast = document.getElementById("toast");
             toast.innerText = message;
-            toast.className = "show";
-            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+            
+            // Set Color
+            toast.className = type === "error" ? "show error" : "show success";
+            
+            setTimeout(() => { toast.classList.remove("show"); }, 3000);
         }
 
         function validateWWW(url) {
             if (!url.includes('www.')) {
-                alert("Invalid Format: URL must contain 'www.' (e.g., https://www.google.com)");
+                showToast("Invalid: URL must include 'www.'", "error");
                 return false;
             }
             return true;
@@ -280,19 +244,26 @@
         function copyToClip(elemId) {
             const txt = document.getElementById(elemId).innerText;
             navigator.clipboard.writeText(txt);
-            showToast();
+            showToast("Copied to clipboard", "success");
         }
 
         function copyTextDirect(txt) {
             navigator.clipboard.writeText(txt);
-            showToast();
+            showToast("Link copied", "success");
+        }
+
+        function copyBulkAll() {
+            if(bulkResultsCache.length === 0) return;
+            const allLinks = bulkResultsCache.join('\n');
+            navigator.clipboard.writeText(allLinks);
+            showToast("All links copied!", "success");
         }
 
         // --- 1. CREATE ---
         async function createLink() {
             const url = document.getElementById('create-input').value.trim();
-            if(!url) return;
-            if(!validateWWW(url)) return; // Strict Validation
+            if(!url) { showToast("Please enter a URL", "error"); return; }
+            if(!validateWWW(url)) return;
 
             setLoad('btn-create', true);
             document.getElementById('res-create').classList.remove('show');
@@ -306,16 +277,16 @@
                     document.getElementById('res-create').classList.add('show');
                     document.getElementById('create-input').value = "";
                 } else {
-                    alert(data.error || "Failed");
+                    showToast(data.error || "Failed", "error");
                 }
-            } catch(e) { alert("Error"); }
+            } catch(e) { showToast("Network Error", "error"); }
             setLoad('btn-create', false);
         }
 
         // --- 2. VERIFY ---
         async function verifyLink() {
             const url = document.getElementById('verify-input').value.trim();
-            if(!url) return;
+            if(!url) { showToast("Enter a short link", "error"); return; }
 
             setLoad('btn-verify', true);
             document.getElementById('res-verify').classList.remove('show');
@@ -337,27 +308,27 @@
 
                     document.getElementById('res-verify').classList.add('show');
                 } else {
-                    alert("Error");
+                    showToast("Verification failed", "error");
                 }
-            } catch(e) { alert("Error"); }
+            } catch(e) { showToast("Network Error", "error"); }
             setLoad('btn-verify', false);
         }
 
         // --- 3. BULK ---
         async function bulkLink() {
             const raw = document.getElementById('bulk-input').value.trim();
-            if(!raw) return;
+            if(!raw) { showToast("Paste some URLs", "error"); return; }
             
             const urls = raw.split('\n').map(u=>u.trim()).filter(u=>u.length>0);
-            
-            // Bulk Validation check
-            for(let u of urls) {
-                if(!validateWWW(u)) return;
-            }
+            for(let u of urls) { if(!validateWWW(u)) return; }
 
             setLoad('btn-bulk', true);
             const list = document.getElementById('bulk-list');
             list.innerHTML = "";
+            
+            // Hide Copy All button initially
+            document.getElementById('btn-bulk-copy').classList.remove('show');
+            bulkResultsCache = [];
 
             try {
                 const res = await fetch('/bulk', {
@@ -372,8 +343,11 @@
                         const li = document.createElement('li');
                         li.className = 'bulk-li';
                         if(item.success) {
+                            // Cache successful link for "Copy All"
+                            bulkResultsCache.push(item.short);
+
                             li.innerHTML = `
-                                <span style="color:#888; max-width:120px; overflow:hidden; text-overflow:ellipsis;">${item.original}</span>
+                                <span style="color:#666; max-width:120px; overflow:hidden; text-overflow:ellipsis;">${item.original}</span>
                                 <div style="display:flex; align-items:center; gap:5px;">
                                     <span style="color:white; font-family:monospace;">${item.short}</span>
                                     <button class="copy-btn" onclick="copyTextDirect('${item.short}')">
@@ -386,9 +360,14 @@
                         }
                         list.appendChild(li);
                     });
+                    
+                    // Show Copy All button if links were generated
+                    if(bulkResultsCache.length > 0) {
+                        document.getElementById('btn-bulk-copy').classList.add('show');
+                    }
                     document.getElementById('bulk-input').value = "";
                 }
-            } catch(e) { alert("Batch Failed"); }
+            } catch(e) { showToast("Batch Failed", "error"); }
             setLoad('btn-bulk', false);
         }
     </script>
