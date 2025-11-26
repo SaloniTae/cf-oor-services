@@ -8,92 +8,94 @@ export async function onRequestGet(context) {
     });
   }
 
-  // Ensure Protocol (http/https)
+  // Ensure https://
   if (!targetUrl.startsWith("http")) {
     targetUrl = "https://" + targetUrl;
   }
 
-  // --- RETRY LOGIC (Try 3 times to find a free alias) ---
   let attempts = 0;
-  const maxAttempts = 3;
+  const maxAttempts = 4; // Increased retries
 
   while (attempts < maxAttempts) {
     attempts++;
 
-    // 1. Generate Random 4-Char Alias
+    // 1. Generate Alias
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let alias = '';
     for (let i = 0; i < 4; i++) alias += chars.charAt(Math.floor(Math.random() * chars.length));
 
-    // 2. Prepare API Call
+    // 2. Call API
     const ulvisUrl = `https://ulvis.net/API/write/get?url=${encodeURIComponent(targetUrl)}&custom=${alias}&private=1&uses=1&type=json`;
 
     try {
       const response = await fetch(ulvisUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
-          "Accept": "application/json",
-          "Referer": "https://ulvis.net"
+          "Accept": "application/json"
         }
       });
 
       const rawText = await response.text();
       let data;
 
-      // Try Parsing JSON
       try {
         data = JSON.parse(rawText);
       } catch (e) {
-        // If JSON fails, it's likely an HTML error (IP Block)
-        return new Response(JSON.stringify({
-          success: false,
-          error: "Cloudflare/Ulvis Blocked the Request",
-          raw_preview: rawText.substring(0, 100)
-        }), { status: 502, headers: { "Content-Type": "application/json" } });
+        // Cloudflare block or bad response
+        if (attempts === maxAttempts) {
+            return new Response(JSON.stringify({
+                success: false, 
+                error: "Ulvis API Error (Invalid JSON)",
+                raw: rawText.substring(0, 100)
+            }), { status: 502, headers: { "Content-Type": "application/json" } });
+        }
+        continue; // Try again
       }
 
-      // 3. CHECK SUCCESS STRICTLY
-      // Ulvis returns success as 1, "1", true, or "true"
-      const isSuccess = data.success == 1 || data.success == true || data.success == "true";
+      // 3. STRICT VALIDATION
+      // We check if success is true AND if the data object has a URL.
+      // We do NOT trust success=true alone.
+      const isSuccess = (data.success == 1 || data.success === true || data.success === "true");
+      const hasUrl = (data.data && data.data.url && data.data.url.length > 0);
 
-      if (isSuccess) {
-        // SUCCESS! Return the data.
+      if (isSuccess && hasUrl) {
         return new Response(JSON.stringify({
           success: true,
           original_url: targetUrl,
-          // We construct the URL manually to be safe, but ONLY because success was true
-          short_url: `https://ulvis.net/${alias}`, 
+          short_url: data.data.url, // DIRECTLY FROM API. No guessing.
           alias: alias
         }), { headers: { "Content-Type": "application/json" } });
       } 
       
-      // 4. HANDLE FAILURE
-      const errorMsg = data.error ? (data.error.msg || JSON.stringify(data.error)) : "Unknown Error";
+      // 4. ERROR HANDLING
+      const errorMsg = data.error ? (data.error.msg || JSON.stringify(data.error)) : "Unknown";
 
-      // If alias is taken, the loop continues to next attempt
-      if (errorMsg.toLowerCase().includes("taken") || errorMsg.toLowerCase().includes("already exists")) {
-        // Console log for debugging (visible in CF dashboard logs)
-        console.log(`Alias ${alias} taken. Retrying...`);
-        continue; 
+      // If taken, retry
+      if (errorMsg.toLowerCase().includes("taken") || errorMsg.toLowerCase().includes("exists")) {
+        continue;
       }
 
-      // If it's some other error (like Invalid URL), stop and report it.
-      return new Response(JSON.stringify({
-        success: false,
-        error: errorMsg,
-        raw_response: data
-      }), { status: 400, headers: { "Content-Type": "application/json" } });
+      // Other errors (like invalid URL format) -> Fail immediately
+      if (attempts === maxAttempts) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: errorMsg,
+            raw_response: data
+          }), { status: 400, headers: { "Content-Type": "application/json" } });
+      }
 
     } catch (err) {
-      return new Response(JSON.stringify({ success: false, error: err.message }), {
-        status: 500, headers: { "Content-Type": "application/json" }
-      });
+      if (attempts === maxAttempts) {
+        return new Response(JSON.stringify({ success: false, error: err.message }), {
+            status: 500, headers: { "Content-Type": "application/json" }
+        });
+      }
     }
   }
 
-  // If we run out of attempts
+  // Final Fallback
   return new Response(JSON.stringify({
     success: false,
-    error: "Failed to generate a unique link after 3 attempts. Ulvis might be busy."
+    error: "Failed to generate link. API might be unresponsive."
   }), { status: 500, headers: { "Content-Type": "application/json" } });
 }
