@@ -3,422 +3,414 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ulvis Pro</title>
+    <title>OOR LiNK</title>
     <style>
         :root {
-            --app-bg: #000000;
-            --card-bg: rgba(28, 28, 30, 0.65);
-            --card-border: rgba(255, 255, 255, 0.12);
-            --accent: #0A84FF;
-            --text-primary: #FFFFFF;
-            --text-secondary: #8E8E93;
-            --danger: #FF453A;
-            --success: #30D158;
-            --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --bg: #000000;
+            --card-bg: #111111;
+            --nav-bg: #1c1c1e;
+            --active-tab: #000000;
+            --text: #ffffff;
+            --text-dim: #8e8e93;
+            --accent: #ffffff;
+            --border: #2c2c2e;
+            --danger: #ff453a;
+            --success: #30d158;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif; }
 
         body {
-            background-color: var(--app-bg);
-            /* Apple-style mesh gradient */
-            background-image: radial-gradient(circle at 50% 0%, #1c1c1e 0%, #000000 100%);
-            color: var(--text-primary);
-            font-family: var(--font-stack);
-            min-height: 100vh;
+            background-color: var(--bg);
+            color: var(--text);
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            justify-content: center;
+            min-height: 100vh;
             margin: 0;
+            padding: 20px;
         }
 
-        /* --- LAYOUT --- */
-        .app-container {
+        /* --- CONTAINER --- */
+        .app-wrapper {
             width: 100%;
-            max-width: 480px;
-            margin-top: 20px;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin: 0; }
-        p.sub { color: var(--text-secondary); font-size: 15px; margin-top: 5px; }
-
-        /* --- IOS SEGMENTED CONTROL --- */
-        .tabs {
-            background: rgba(118, 118, 128, 0.24);
-            backdrop-filter: blur(10px);
-            padding: 2px;
-            border-radius: 9px;
+            max-width: 420px;
             display: flex;
-            margin-bottom: 25px;
-            position: relative;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        .tab {
-            flex: 1;
+        h1 {
             text-align: center;
-            padding: 8px 0;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin: 0 0 5px 0;
+            font-size: 28px;
+        }
+
+        /* --- NAVIGATION (Based on your image) --- */
+        .nav-container {
+            background-color: var(--nav-bg);
+            border-radius: 16px;
+            padding: 6px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr; /* 3 Columns */
+            gap: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .nav-item {
+            padding: 12px 0;
+            text-align: center;
+            color: var(--text-dim);
             font-size: 13px;
-            font-weight: 500;
-            color: var(--text-primary);
+            font-weight: 600;
             cursor: pointer;
-            border-radius: 7px;
+            border-radius: 10px;
             transition: all 0.2s ease;
-            z-index: 2;
         }
 
-        .tab.active {
-            background: #636366; /* Fallback */
-            background: rgba(99, 99, 102, 0.5);
-            box-shadow: 0 3px 8px rgba(0,0,0,0.12), 0 3px 1px rgba(0,0,0,0.04);
-            color: white;
+        .nav-item.active {
+            background-color: var(--active-tab);
+            color: var(--text);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
         }
 
-        /* --- CARDS & INPUTS --- */
-        .view { display: none; animation: fadeScale 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        .view.active { display: block; }
+        /* --- CONTENT CARDS --- */
+        .view-section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .view-section.active { display: block; }
 
-        .input-card {
+        .card {
             background: var(--card-bg);
-            border: 0.5px solid var(--card-border);
+            border: 1px solid var(--border);
             border-radius: 18px;
             padding: 20px;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
         }
 
         label {
             display: block;
+            color: var(--text-dim);
             font-size: 12px;
             font-weight: 600;
-            color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             margin-left: 4px;
         }
 
         input, textarea {
             width: 100%;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid transparent;
+            background: #000;
+            border: 1px solid #333;
             border-radius: 12px;
-            padding: 16px;
+            padding: 15px;
             color: white;
-            font-size: 17px;
-            font-family: inherit;
+            font-size: 16px;
             outline: none;
             transition: 0.2s;
         }
-        input:focus, textarea:focus { border-color: var(--accent); background: rgba(0,0,0,0.5); }
-        textarea { min-height: 120px; resize: none; }
+        input:focus, textarea:focus { border-color: #666; }
+        textarea { resize: none; height: 120px; }
 
-        /* --- BUTTONS --- */
-        .btn-primary {
+        .btn {
             width: 100%;
-            background: var(--accent);
-            color: white;
+            background: white;
+            color: black;
             border: none;
             padding: 16px;
-            border-radius: 14px;
-            font-size: 17px;
-            font-weight: 600;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
             margin-top: 15px;
             cursor: pointer;
-            transition: transform 0.1s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        .btn-primary:active { transform: scale(0.96); opacity: 0.9; }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn:active { opacity: 0.8; transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* --- RESULTS --- */
-        .result-card {
+        .result-box {
             margin-top: 20px;
-            background: rgba(255,255,255,0.08);
-            border-radius: 14px;
-            padding: 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px;
             display: none;
         }
-        .result-card.show { display: block; }
+        .result-box.show { display: block; }
 
-        .result-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .result-label { color: var(--text-secondary); font-size: 13px; }
-        .result-val { font-weight: 500; font-size: 15px; }
-        
-        .copy-link {
-            color: var(--accent);
-            font-size: 15px;
-            font-weight: 600;
-            text-decoration: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-top: 10px;
         }
+        .status-fresh { background: rgba(48, 209, 88, 0.2); color: var(--success); }
+        .status-used { background: rgba(255, 69, 58, 0.2); color: var(--danger); }
 
-        /* --- STATUS BADGES --- */
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
-        .badge.fresh { background: rgba(48, 209, 88, 0.2); color: var(--success); }
-        .badge.used { background: rgba(255, 69, 58, 0.2); color: var(--danger); }
-
-        /* --- BULK LIST --- */
-        .bulk-list { margin-top: 20px; list-style: none; padding: 0; }
-        .bulk-item {
-            background: rgba(255,255,255,0.05);
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 8px;
+        /* --- SVG ICON --- */
+        .copy-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 14px;
+            gap: 10px;
         }
-        .bulk-item a { color: var(--accent); text-decoration: none; }
+        .short-link {
+            font-family: monospace;
+            color: var(--accent);
+            font-size: 15px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .copy-btn {
+            background: none; border: none; cursor: pointer; padding: 5px;
+        }
+        .copy-btn svg { width: 20px; height: 20px; fill: var(--text-dim); transition: 0.2s; }
+        .copy-btn:active svg { fill: white; transform: scale(0.9); }
+
+        /* --- BULK LIST --- */
+        .bulk-ul { list-style: none; padding: 0; margin-top: 20px; }
+        .bulk-li {
+            background: #1a1a1a; padding: 12px; border-radius: 10px; margin-bottom: 8px;
+            display: flex; justify-content: space-between; align-items: center; font-size: 13px;
+        }
+
+        /* --- FOOTER --- */
+        footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #444;
+        }
 
         /* --- LOADER --- */
-        .loader {
-            width: 20px; height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 0.8s linear infinite;
-            display: none; margin: 0 auto;
+        .spinner {
+            width: 20px; height: 20px; border: 3px solid #ccc; border-top-color: black;
+            border-radius: 50%; animation: spin 0.8s linear infinite; display: none;
         }
-        .btn-primary.loading .loader { display: inline-block; }
-        .btn-primary.loading span { display: none; }
-
         @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeScale { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <header>
-        <h1>Ulvis Pro</h1>
-        <p class="sub">Secure. One-Time. Verified.</p>
-    </header>
+    <div class="app-wrapper">
+        <h1>OOR LiNK</h1>
 
-    <!-- TABS -->
-    <div class="tabs">
-        <div class="tab active" onclick="setTab('create')">New Link</div>
-        <div class="tab" onclick="setTab('verify')">Verify</div>
-        <div class="tab" onclick="setTab('bulk')">Bulk</div>
-    </div>
-
-    <!-- CREATE VIEW -->
-    <div id="view-create" class="view active">
-        <div class="input-card">
-            <label>Destination URL</label>
-            <input type="url" id="create-url" placeholder="https://example.com" onkeypress="handleEnter(event, createLink)">
-            <button id="btn-create" class="btn-primary" onclick="createLink()">
-                <span>Create Link</span>
-                <div class="loader"></div>
-            </button>
+        <!-- NAVIGATION (Styled like your image) -->
+        <div class="nav-container">
+            <div class="nav-item active" onclick="switchTab('create', this)">Create</div>
+            <div class="nav-item" onclick="switchTab('verify', this)">Verify</div>
+            <div class="nav-item" onclick="switchTab('bulk', this)">Bulk</div>
         </div>
 
-        <div id="result-create" class="result-card">
-            <div class="result-row">
-                <span class="result-label">Short Link</span>
-                <div class="copy-link" onclick="copyText('res-short-url')">
-                    <span id="res-short-url">...</span> 📋
+        <!-- TAB 1: CREATE -->
+        <div id="view-create" class="view-section active">
+            <div class="card">
+                <label>Destination URL</label>
+                <input type="text" id="create-input" placeholder="https://www.example1.com">
+                <button class="btn" id="btn-create" onclick="createLink()">
+                    <span class="btn-text">Generate Link</span>
+                    <div class="spinner"></div>
+                </button>
+
+                <div id="res-create" class="result-box">
+                    <label style="margin-bottom:5px">Your Private Link</label>
+                    <div class="copy-row">
+                        <span id="out-link" class="short-link">...</span>
+                        <button class="copy-btn" onclick="copyToClip('out-link')">
+                            <!-- SVG Clipboard Icon -->
+                            <svg viewBox="0 0 24 24"><path d="M16 1H8C6.34 1 5 2.34 5 4v16c0 1.66 1.34 3 3 3h8c1.66 0 3-1.34 3-3V4c0-1.66-1.34-3-3-3zm-2 5h-4V4h4v2z"/></svg>
+                        </button>
+                    </div>
+                    <span class="status-badge status-fresh">Ready to use</span>
                 </div>
             </div>
-            <div class="result-row" style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1)">
-                <span class="result-label">Status</span>
-                <span class="badge fresh">Ready</span>
+        </div>
+
+        <!-- TAB 2: VERIFY -->
+        <div id="view-verify" class="view-section">
+            <div class="card">
+                <label>Short Link</label>
+                <input type="text" id="verify-input" placeholder="https://ulvis.net/AbCd">
+                <button class="btn" id="btn-verify" onclick="verifyLink()">
+                    <span class="btn-text">Check Status</span>
+                    <div class="spinner"></div>
+                </button>
+
+                <div id="res-verify" class="result-box">
+                    <div class="copy-row">
+                        <span class="status-badge" id="ver-badge">...</span>
+                        <span style="font-size: 12px; color: #666;" id="ver-hits"></span>
+                    </div>
+                    <p style="font-size: 14px; margin-top: 10px; line-height: 1.4;" id="ver-msg">...</p>
+                    <label style="margin-top: 15px;">Last Activity (IST)</label>
+                    <div style="color: white; font-size: 14px;" id="ver-time">...</div>
+                </div>
             </div>
         </div>
+
+        <!-- TAB 3: BULK -->
+        <div id="view-bulk" class="view-section">
+            <div class="card">
+                <label>Paste URLs (One per line)</label>
+                <textarea id="bulk-input" placeholder="https://www.example1.com&#10;https://www.example2.com"></textarea>
+                <button class="btn" id="btn-bulk" onclick="bulkLink()">
+                    <span class="btn-text">Process Batch</span>
+                    <div class="spinner"></div>
+                </button>
+            </div>
+            <ul id="bulk-list" class="bulk-ul"></ul>
+        </div>
+
+        <!-- FOOTER -->
+        <footer>
+            <div id="copyright"></div>
+        </footer>
     </div>
 
-    <!-- VERIFY VIEW -->
-    <div id="view-verify" class="view">
-        <div class="input-card">
-            <label>Short Link</label>
-            <input type="text" id="verify-input" placeholder="https://ulvis.net/AbCd" onkeypress="handleEnter(event, verifyLink)">
-            <button id="btn-verify" class="btn-primary" onclick="verifyLink()">
-                <span>Analyze Fraud</span>
-                <div class="loader"></div>
-            </button>
-        </div>
-
-        <div id="result-verify" class="result-card">
-            <div class="result-row">
-                <span class="result-label">Status</span>
-                <span id="ver-status" class="badge">...</span>
-            </div>
-            <div class="result-row">
-                <span class="result-label">Last Activity (IST)</span>
-            </div>
-            <div style="font-size: 14px; color: white; margin-bottom: 10px;" id="ver-time">...</div>
+    <script>
+        // --- NAVIGATION ---
+        function switchTab(tabId, navElement) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.getElementById('view-' + tabId).classList.add('active');
             
-            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; font-size: 13px; line-height: 1.4; color: #ccc;" id="ver-msg">
-                ...
-            </div>
-        </div>
-    </div>
-
-    <!-- BULK VIEW -->
-    <div id="view-bulk" class="view">
-        <div class="input-card">
-            <label>URLs (One per line)</label>
-            <textarea id="bulk-text" placeholder="https://site1.com&#10;https://site2.com"></textarea>
-            <button id="btn-bulk" class="btn-primary" onclick="bulkProcess()">
-                <span>Process Batch</span>
-                <div class="loader"></div>
-            </button>
-        </div>
-
-        <ul id="bulk-list" class="bulk-list"></ul>
-    </div>
-
-</div>
-
-<script>
-    // --- UI LOGIC ---
-    function setTab(tab) {
-        // Reset Views
-        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-        document.getElementById('view-' + tab).classList.add('active');
-        
-        // Reset Tabs
-        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-        event.target.classList.add('active');
-    }
-
-    function handleEnter(e, func) {
-        if (e.key === "Enter") func();
-    }
-
-    function setLoading(btnId, isLoading) {
-        const btn = document.getElementById(btnId);
-        if (isLoading) {
-            btn.classList.add('loading');
-            btn.disabled = true;
-        } else {
-            btn.classList.remove('loading');
-            btn.disabled = false;
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            navElement.classList.add('active');
         }
-    }
 
-    function copyText(elementId) {
-        const text = document.getElementById(elementId).innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            alert("Copied to clipboard!");
-        });
-    }
+        // --- DYNAMIC FOOTER ---
+        document.getElementById('copyright').innerText = `© ${new Date().getFullYear()} OORverse. All rights reserved.`;
 
-    // --- 1. CREATE ---
-    async function createLink() {
-        const input = document.getElementById('create-url');
-        const url = input.value.trim();
-        if (!url) return;
-
-        setLoading('btn-create', true);
-        document.getElementById('result-create').classList.remove('show');
-
-        try {
-            const res = await fetch(`/short?url=${encodeURIComponent(url)}`);
-            const data = await res.json();
-
-            if (res.ok && data.success) {
-                document.getElementById('res-short-url').innerText = data.short_url;
-                document.getElementById('result-create').classList.add('show');
-                input.value = ""; // Clear input
+        // --- UTILS ---
+        function setLoad(btnId, state) {
+            const btn = document.getElementById(btnId);
+            const spinner = btn.querySelector('.spinner');
+            const text = btn.querySelector('.btn-text');
+            
+            if(state) {
+                btn.disabled = true;
+                spinner.style.display = 'block';
+                text.style.display = 'none';
             } else {
-                alert(data.error || "Failed to create link");
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                text.style.display = 'block';
             }
-        } catch (e) {
-            alert("Network Error: " + e.message);
         }
-        setLoading('btn-create', false);
-    }
 
-    // --- 2. VERIFY ---
-    async function verifyLink() {
-        const input = document.getElementById('verify-input');
-        const url = input.value.trim();
-        if (!url) return;
-
-        setLoading('btn-verify', true);
-        document.getElementById('result-verify').classList.remove('show');
-
-        try {
-            const res = await fetch(`/verify?url=${encodeURIComponent(url)}`);
-            const data = await res.json();
-
-            if (res.ok || res.status === 404) { // 404 is also a valid "Fraud" result sometimes
-                const isUsed = data.link_status && data.link_status.includes("USED");
-                
-                // Badge
-                const badge = document.getElementById('ver-status');
-                badge.className = isUsed ? "badge used" : "badge fresh";
-                badge.innerText = isUsed ? "USED" : "FRESH";
-
-                // Time
-                document.getElementById('ver-time').innerText = data.evidence?.last_activity_ist || "Never";
-
-                // Message
-                document.getElementById('ver-msg').innerText = data.fraud_analysis || data.error;
-
-                document.getElementById('result-verify').classList.add('show');
-            } else {
-                alert("Error checking link");
-            }
-        } catch (e) {
-            alert("Network Error");
+        function copyToClip(elemId) {
+            const txt = document.getElementById(elemId).innerText;
+            navigator.clipboard.writeText(txt);
+            // Visual feedback could go here
         }
-        setLoading('btn-verify', false);
-    }
 
-    // --- 3. BULK ---
-    async function bulkProcess() {
-        const input = document.getElementById('bulk-text');
-        const text = input.value.trim();
-        if (!text) return;
+        // --- 1. CREATE ---
+        async function createLink() {
+            const url = document.getElementById('create-input').value.trim();
+            if(!url) return;
 
-        const urls = text.split('\n').map(u => u.trim()).filter(u => u.length > 0);
-        
-        setLoading('btn-bulk', true);
-        const list = document.getElementById('bulk-list');
-        list.innerHTML = ""; // Clear list
+            setLoad('btn-create', true);
+            document.getElementById('res-create').classList.remove('show');
 
-        try {
-            const res = await fetch('/bulk', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ urls })
-            });
-            const data = await res.json();
+            try {
+                const res = await fetch(`/short?url=${encodeURIComponent(url)}`);
+                const data = await res.json();
 
-            if (data.success) {
-                data.results.forEach(item => {
-                    const li = document.createElement('li');
-                    li.className = 'bulk-item';
+                if(res.ok && data.success) {
+                    document.getElementById('out-link').innerText = data.short_url;
+                    document.getElementById('res-create').classList.add('show');
+                    document.getElementById('create-input').value = "";
+                } else {
+                    alert(data.error || "Failed");
+                }
+            } catch(e) { alert("Error"); }
+            setLoad('btn-create', false);
+        }
+
+        // --- 2. VERIFY ---
+        async function verifyLink() {
+            const url = document.getElementById('verify-input').value.trim();
+            if(!url) return;
+
+            setLoad('btn-verify', true);
+            document.getElementById('res-verify').classList.remove('show');
+
+            try {
+                const res = await fetch(`/verify?url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+
+                if(res.ok || res.status === 404) {
+                    const isUsed = data.link_status === "USED";
                     
-                    if (item.success) {
-                        li.innerHTML = `
-                            <span style="color:#888; font-size:12px; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.original}</span>
-                            <a href="#" onclick="navigator.clipboard.writeText('${item.short}'); alert('Copied!'); return false;">${item.short} 📋</a>
-                        `;
-                    } else {
-                        li.innerHTML = `<span style="color:var(--danger)">Failed</span>`;
-                    }
-                    list.appendChild(li);
-                });
-                input.value = ""; // Clear
-            }
-        } catch (e) {
-            alert("Batch failed");
-        }
-        setLoading('btn-bulk', false);
-    }
-</script>
+                    const badge = document.getElementById('ver-badge');
+                    badge.innerText = isUsed ? "USED / EXPIRED" : "FRESH";
+                    badge.className = isUsed ? "status-badge status-used" : "status-badge status-fresh";
 
+                    document.getElementById('ver-hits').innerText = `Hits: ${data.evidence?.hits || 0}`;
+                    document.getElementById('ver-msg').innerText = data.fraud_analysis || data.error;
+                    document.getElementById('ver-time').innerText = data.evidence?.last_activity_ist || "N/A";
+
+                    document.getElementById('res-verify').classList.add('show');
+                } else {
+                    alert("Error");
+                }
+            } catch(e) { alert("Error"); }
+            setLoad('btn-verify', false);
+        }
+
+        // --- 3. BULK ---
+        async function bulkLink() {
+            const raw = document.getElementById('bulk-input').value.trim();
+            if(!raw) return;
+            const urls = raw.split('\n').map(u=>u.trim()).filter(u=>u.length>0);
+
+            setLoad('btn-bulk', true);
+            const list = document.getElementById('bulk-list');
+            list.innerHTML = "";
+
+            try {
+                const res = await fetch('/bulk', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({urls})
+                });
+                const data = await res.json();
+
+                if(data.success) {
+                    data.results.forEach(item => {
+                        const li = document.createElement('li');
+                        li.className = 'bulk-li';
+                        if(item.success) {
+                            li.innerHTML = `
+                                <span style="color:#666; max-width:120px; overflow:hidden; text-overflow:ellipsis;">${item.original}</span>
+                                <div style="display:flex; align-items:center; gap:5px;">
+                                    <span style="color:white; font-family:monospace;" id="blk-${item.alias}">${item.short}</span>
+                                    <button class="copy-btn" onclick="navigator.clipboard.writeText('${item.short}')">
+                                        <svg viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M16 1H8C6.34 1 5 2.34 5 4v16c0 1.66 1.34 3 3 3h8c1.66 0 3-1.34 3-3V4c0-1.66-1.34-3-3-3zm-2 5h-4V4h4v2z"/></svg>
+                                    </button>
+                                </div>
+                            `;
+                        } else {
+                            li.innerHTML = `<span style="color:red">Failed</span>`;
+                        }
+                        list.appendChild(li);
+                    });
+                    document.getElementById('bulk-input').value = "";
+                }
+            } catch(e) { alert("Batch Failed"); }
+            setLoad('btn-bulk', false);
+        }
+    </script>
 </body>
 </html>
