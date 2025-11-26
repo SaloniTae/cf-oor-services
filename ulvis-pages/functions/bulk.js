@@ -11,24 +11,23 @@ export async function onRequestPost(context) {
     return new Response(JSON.stringify({ error: "Missing 'urls' array" }), { status: 400 });
   }
 
-  // --- HELPER: Create Single Link (Strict Mode) ---
+  // Helper: Delay function to prevent API Rate Limiting
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
   const createOneLink = async (targetUrl) => {
-    // 1. Cleanup URL
     let processedUrl = targetUrl.trim();
     if (!processedUrl.startsWith("http")) processedUrl = "https://" + processedUrl;
 
     let attempts = 0;
-    const maxAttempts = 3; // Retry 3 times
+    const maxAttempts = 3;
 
     while (attempts < maxAttempts) {
       attempts++;
       
-      // 2. Generate Alias
       const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let alias = '';
       for (let i = 0; i < 4; i++) alias += chars.charAt(Math.floor(Math.random() * chars.length));
 
-      // 3. Call API
       const ulvisUrl = `https://ulvis.net/API/write/get?url=${encodeURIComponent(processedUrl)}&custom=${alias}&private=1&uses=1&type=json`;
 
       try {
@@ -40,22 +39,13 @@ export async function onRequestPost(context) {
         let data;
         try { data = JSON.parse(text); } catch(e) { continue; } 
 
-        // 4. Check Success
         const isSuccess = (data.success == 1 || data.success === true || data.success === "true");
         
         if (isSuccess) {
-          // If API returns success but no URL, we construct it safely because success=true
           const finalShort = (data.data && data.data.url) ? data.data.url : `https://ulvis.net/${alias}`;
-          
-          return { 
-            success: true, 
-            original: targetUrl, 
-            short: finalShort, 
-            alias: alias 
-          };
+          return { success: true, original: targetUrl, short: finalShort, alias: alias };
         }
 
-        // If alias taken, retry. Else, return error.
         const errMsg = data.error ? (data.error.msg || JSON.stringify(data.error)) : "Unknown";
         if (!errMsg.toLowerCase().includes("taken")) {
             return { success: false, original: targetUrl, error: errMsg };
@@ -65,11 +55,19 @@ export async function onRequestPost(context) {
         if (attempts === maxAttempts) return { success: false, original: targetUrl, error: "Network Error" };
       }
     }
-    return { success: false, original: targetUrl, error: "Failed after 3 retries" };
+    return { success: false, original: targetUrl, error: "Failed after retries" };
   };
 
-  // --- EXECUTE PARALLEL ---
-  const results = await Promise.all(urls.map(u => createOneLink(u)));
+  // --- STAGGERED EXECUTION ---
+  // We do not use Promise.all here because it fires everything at once.
+  // We loop through and wait a tiny bit to ensure Ulvis processes every link.
+  const results = [];
+  for (const u of urls) {
+      const result = await createOneLink(u);
+      results.push(result);
+      // Wait 300ms between requests to ensure stability
+      await delay(300); 
+  }
 
   return new Response(JSON.stringify({ 
     success: true, 
