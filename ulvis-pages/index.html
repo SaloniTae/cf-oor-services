@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OOR LiNK</title>
+    <title>OOR | LiNK</title>
+    <link rel="icon" href="https://res.cloudinary.com/djzfoukhz/image/upload/Support_20250428_001646_0000_hkeixk.jpg">
     <style>
         :root {
             --bg: #000000;
@@ -76,14 +77,47 @@
         }
         .btn-secondary.show { display: flex; }
 
-        /* --- RESULTS --- */
+        /* --- RESULTS & VERIFY CARD LAYOUT --- */
         .result-box { margin-top: 20px; background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: none; }
         .result-box.show { display: block; }
 
-        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; margin-top: 10px; }
+        /* Verify Card Specifics */
+        .verify-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center; /* Vertical Center Alignment */
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .hits-pill {
+            background: #222;
+            border: 1px solid #333;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #aaa;
+            font-weight: 600;
+        }
+
+        .verify-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .time-label { font-size: 12px; color: #666; font-weight: 600; text-transform: uppercase; }
+        .time-value { font-size: 13px; color: white; font-variant-numeric: tabular-nums; }
+
+        .status-badge { display: inline-block; padding: 6px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
         .status-fresh { background: rgba(48, 209, 88, 0.2); color: var(--success); }
         .status-used { background: rgba(255, 69, 58, 0.2); color: var(--danger); }
 
+        /* --- COPY UI --- */
         .copy-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
         .short-link { font-family: monospace; color: white; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
@@ -102,10 +136,7 @@
             visibility: hidden; min-width: 200px; background-color: #333; color: #fff; text-align: center; border-radius: 50px; padding: 12px; position: fixed; z-index: 100; left: 50%; bottom: 30px; transform: translateX(-50%); font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); opacity: 0; transition: opacity 0.3s, bottom 0.3s; font-weight: 600;
         }
         #toast.show { visibility: visible; opacity: 1; bottom: 50px; }
-        
-        /* Error Style for Toast */
         #toast.error { background-color: var(--danger); color: white; }
-        /* Success Style for Toast */
         #toast.success { background-color: #333; color: white; }
 
         /* --- FOOTER --- */
@@ -147,12 +178,14 @@
                             <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
                         </button>
                     </div>
-                    <span class="status-badge status-fresh">Ready to use</span>
+                    <div style="margin-top:15px;">
+                        <span class="status-badge status-fresh">Ready to use</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- VERIFY -->
+        <!-- VERIFY (IMPROVED LAYOUT) -->
         <div id="view-verify" class="view-section">
             <div class="card">
                 <label>Short Link</label>
@@ -163,13 +196,20 @@
                 </button>
 
                 <div id="res-verify" class="result-box">
-                    <div class="copy-row">
+                    <!-- Header Row: Badge Left, Hits Right -->
+                    <div class="verify-header">
                         <span class="status-badge" id="ver-badge">...</span>
-                        <span style="font-size: 12px; color: #888;" id="ver-hits"></span>
+                        <span class="hits-pill" id="ver-hits">Hits: 0</span>
                     </div>
-                    <p style="font-size: 14px; margin-top: 10px; line-height: 1.4; color: #ddd;" id="ver-msg">...</p>
-                    <label style="margin-top: 15px;">Last Activity (IST)</label>
-                    <div style="color: white; font-size: 14px;" id="ver-time">...</div>
+
+                    <!-- Message Body -->
+                    <p style="font-size: 14px; margin: 0; line-height: 1.5; color: #ddd;" id="ver-msg">...</p>
+
+                    <!-- Footer Row: Label Left, Time Right -->
+                    <div class="verify-footer">
+                        <span class="time-label">Last Activity (IST)</span>
+                        <span class="time-value" id="ver-time">...</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -183,8 +223,6 @@
                     <span class="btn-text">Process Batch</span>
                     <div class="spinner"></div>
                 </button>
-
-                <!-- NEW: COPY ALL BUTTON -->
                 <button class="btn btn-secondary" id="btn-bulk-copy" onclick="copyBulkAll()">
                     <span>Copy All Links</span>
                 </button>
@@ -195,12 +233,11 @@
         <footer><div id="copyright"></div></footer>
     </div>
 
-    <!-- TOAST -->
     <div id="toast">Copied to clipboard</div>
 
     <script>
-        // --- GLOBAL VARIABLES ---
-        let bulkResultsCache = []; // Stores generated bulk links
+        // --- VARIABLES ---
+        let bulkResultsCache = [];
 
         // --- UI ---
         function switchTab(tabId, navElement) {
@@ -211,14 +248,11 @@
         }
         document.getElementById('copyright').innerText = `© ${new Date().getFullYear()} OORverse. All rights reserved.`;
 
-        // --- TOAST (Error & Success) ---
+        // --- TOAST ---
         function showToast(message = "Copied to clipboard", type = "success") {
             const toast = document.getElementById("toast");
             toast.innerText = message;
-            
-            // Set Color
             toast.className = type === "error" ? "show error" : "show success";
-            
             setTimeout(() => { toast.classList.remove("show"); }, 3000);
         }
 
@@ -326,7 +360,6 @@
             const list = document.getElementById('bulk-list');
             list.innerHTML = "";
             
-            // Hide Copy All button initially
             document.getElementById('btn-bulk-copy').classList.remove('show');
             bulkResultsCache = [];
 
@@ -343,9 +376,7 @@
                         const li = document.createElement('li');
                         li.className = 'bulk-li';
                         if(item.success) {
-                            // Cache successful link for "Copy All"
                             bulkResultsCache.push(item.short);
-
                             li.innerHTML = `
                                 <span style="color:#666; max-width:120px; overflow:hidden; text-overflow:ellipsis;">${item.original}</span>
                                 <div style="display:flex; align-items:center; gap:5px;">
@@ -360,8 +391,6 @@
                         }
                         list.appendChild(li);
                     });
-                    
-                    // Show Copy All button if links were generated
                     if(bulkResultsCache.length > 0) {
                         document.getElementById('btn-bulk-copy').classList.add('show');
                     }
