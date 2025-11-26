@@ -11,23 +11,24 @@ export async function onRequestPost(context) {
     return new Response(JSON.stringify({ error: "Missing 'urls' array" }), { status: 400 });
   }
 
-  // --- HELPER: The Strict Creation Logic (Same as short.js) ---
+  // --- HELPER: Create Single Link (Strict Mode) ---
   const createOneLink = async (targetUrl) => {
-    // Ensure Protocol
-    let processedUrl = targetUrl;
+    // 1. Cleanup URL
+    let processedUrl = targetUrl.trim();
     if (!processedUrl.startsWith("http")) processedUrl = "https://" + processedUrl;
 
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 3; // Retry 3 times
 
     while (attempts < maxAttempts) {
       attempts++;
       
-      // Generate Alias
+      // 2. Generate Alias
       const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       let alias = '';
       for (let i = 0; i < 4; i++) alias += chars.charAt(Math.floor(Math.random() * chars.length));
 
+      // 3. Call API
       const ulvisUrl = `https://ulvis.net/API/write/get?url=${encodeURIComponent(processedUrl)}&custom=${alias}&private=1&uses=1&type=json`;
 
       try {
@@ -37,22 +38,24 @@ export async function onRequestPost(context) {
 
         const text = await res.text();
         let data;
-        try { data = JSON.parse(text); } catch(e) { continue; } // JSON error -> Retry
+        try { data = JSON.parse(text); } catch(e) { continue; } 
 
-        // STRICT SUCCESS CHECK
+        // 4. Check Success
         const isSuccess = (data.success == 1 || data.success === true || data.success === "true");
-        const hasUrl = (data.data && data.data.url && data.data.url.length > 0);
-
-        if (isSuccess && hasUrl) {
+        
+        if (isSuccess) {
+          // If API returns success but no URL, we construct it safely because success=true
+          const finalShort = (data.data && data.data.url) ? data.data.url : `https://ulvis.net/${alias}`;
+          
           return { 
             success: true, 
             original: targetUrl, 
-            short: data.data.url, 
+            short: finalShort, 
             alias: alias 
           };
         }
 
-        // If alias taken, loop continues. If other error, stop.
+        // If alias taken, retry. Else, return error.
         const errMsg = data.error ? (data.error.msg || JSON.stringify(data.error)) : "Unknown";
         if (!errMsg.toLowerCase().includes("taken")) {
             return { success: false, original: targetUrl, error: errMsg };
@@ -62,11 +65,10 @@ export async function onRequestPost(context) {
         if (attempts === maxAttempts) return { success: false, original: targetUrl, error: "Network Error" };
       }
     }
-    return { success: false, original: targetUrl, error: "Failed after 3 attempts" };
+    return { success: false, original: targetUrl, error: "Failed after 3 retries" };
   };
 
-  // --- CONCURRENT EXECUTION ---
-  // We map the helper function to all URLs and run them in parallel
+  // --- EXECUTE PARALLEL ---
   const results = await Promise.all(urls.map(u => createOneLink(u)));
 
   return new Response(JSON.stringify({ 
