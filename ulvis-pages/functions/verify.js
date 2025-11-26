@@ -33,7 +33,7 @@ export async function onRequestGet(context) {
     const hits = parseInt(info.hits || 0);
     const lastTimeUnix = parseInt(info.last || 0);
 
-    // --- FIXED STATUS LOGIC ---
+    // --- STATUS LOGIC ---
     let statusMessage = "";
     let fraudVerdict = "";
     
@@ -45,10 +45,21 @@ export async function onRequestGet(context) {
         fraudVerdict = "User OPENED this link.";
     }
 
+    // --- FIXED TIMESTAMP (Uppercase AM/PM) ---
     let timeIST = "Never";
     if (lastTimeUnix > 0) {
         const date = new Date(lastTimeUnix * 1000);
-        timeIST = date.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", dateStyle: "medium", timeStyle: "medium" });
+        
+        // 1. Generate string in Indian Format (usually lowercase am/pm)
+        let rawTime = date.toLocaleString("en-IN", { 
+            timeZone: "Asia/Kolkata", 
+            dateStyle: "medium", 
+            timeStyle: "medium" 
+        });
+
+        // 2. Force Uppercase AM/PM
+        // This turns "26 Nov 2025, 7:33:45 pm" -> "26 Nov 2025, 7:33:45 PM"
+        timeIST = rawTime.replace("am", "AM").replace("pm", "PM").replace("a.m.", "AM").replace("p.m.", "PM");
     }
 
     return new Response(JSON.stringify({
