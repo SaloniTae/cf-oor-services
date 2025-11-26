@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ulvis Private Shortener</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* --- RESET & BASE --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        
+        body {
+            background: #0f0c29;
+            background: linear-gradient(to right, #24243e, #302b63, #0f0c29);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        /* --- BACKGROUND ORBS (For Glass Effect) --- */
+        .orb { position: absolute; border-radius: 50%; filter: blur(80px); z-index: -1; }
+        .orb-1 { top: -10%; left: -10%; width: 300px; height: 300px; background: #7f00ff; }
+        .orb-2 { bottom: 10%; right: -5%; width: 350px; height: 350px; background: #ff0055; }
+
+        /* --- GLASS CARD --- */
+        .glass-container {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 { font-weight: 600; font-size: 24px; margin-bottom: 10px; letter-spacing: -0.5px; }
+        p.subtitle { font-size: 14px; color: rgba(255, 255, 255, 0.6); margin-bottom: 30px; }
+
+        /* --- TABS --- */
+        .tabs { display: flex; gap: 10px; margin-bottom: 25px; }
+        .tab-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: rgba(255,255,255,0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.3s;
+        }
+        .tab-btn.active { background: rgba(255,255,255,0.1); border-color: white; color: white; }
+
+        /* --- INPUT GROUPS --- */
+        .input-group { margin-bottom: 20px; display: none; animation: fadeIn 0.5s ease; }
+        .input-group.active { display: block; }
+
+        label { display: block; font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+
+        input, textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            color: white;
+            font-size: 14px;
+            outline: none;
+            transition: 0.3s;
+        }
+        input:focus, textarea:focus { border-color: rgba(255, 255, 255, 0.4); background: rgba(0, 0, 0, 0.5); }
+        textarea { resize: vertical; min-height: 100px; }
+
+        /* --- BUTTONS (White as requested) --- */
+        .action-btn {
+            width: 100%;
+            background: #ffffff;
+            color: #000000;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(255, 255, 255, 0.15); }
+        .action-btn:active { transform: translateY(0); }
+
+        /* --- OUTPUT AREA --- */
+        .output-area {
+            margin-top: 30px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: none;
+        }
+        .output-area.show { display: block; }
+        pre { white-space: pre-wrap; word-wrap: break-word; font-family: 'Consolas', monospace; font-size: 12px; color: #00ff88; }
+        .error-text { color: #ff5555; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="glass-container">
+        <h1>Ulvis Manager</h1>
+        <p class="subtitle">One-time links. Fraud detection. Zero logs.</p>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('create')">Create</button>
+            <button class="tab-btn" onclick="switchTab('verify')">Verify</button>
+            <button class="tab-btn" onclick="switchTab('bulk')">Bulk</button>
+        </div>
+
+        <!-- CREATE SECTION -->
+        <div id="create" class="input-group active">
+            <label>Long URL</label>
+            <input type="text" id="shortUrlInput" placeholder="https://example.com">
+            <button class="action-btn" onclick="createLink()">Generate One-Time Link</button>
+        </div>
+
+        <!-- VERIFY SECTION -->
+        <div id="verify" class="input-group">
+            <label>Short Link to Check</label>
+            <input type="text" id="verifyUrlInput" placeholder="https://ulvis.net/AbCd">
+            <button class="action-btn" onclick="verifyLink()">Analyze Fraud</button>
+        </div>
+
+        <!-- BULK SECTION -->
+        <div id="bulk" class="input-group">
+            <label>Paste Links (One per line)</label>
+            <textarea id="bulkInput" placeholder="https://google.com&#10;https://github.com&#10;https://youtube.com"></textarea>
+            <button class="action-btn" onclick="bulkCreate()">Process Batch</button>
+        </div>
+
+        <!-- RESULT DISPLAY -->
+        <div id="output" class="output-area">
+            <pre id="jsonOutput">Waiting for input...</pre>
+        </div>
+    </div>
+
+    <script>
+        // --- UI TABS ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.input-group').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            
+            // Highlight button
+            const buttons = document.querySelectorAll('.tab-btn');
+            if(tabName === 'create') buttons[0].classList.add('active');
+            if(tabName === 'verify') buttons[1].classList.add('active');
+            if(tabName === 'bulk') buttons[2].classList.add('active');
+            
+            // Clear output
+            document.getElementById('output').classList.remove('show');
+        }
+
+        // --- HELPER: SHOW RESULTS ---
+        function showResult(data, isError = false) {
+            const outDiv = document.getElementById('output');
+            const outPre = document.getElementById('jsonOutput');
+            outDiv.classList.add('show');
+            
+            outPre.textContent = JSON.stringify(data, null, 2);
+            outPre.className = isError ? 'error-text' : '';
+        }
+
+        // --- 1. CREATE LINK ---
+        async function createLink() {
+            const url = document.getElementById('shortUrlInput').value.trim();
+            if(!url) return alert("Please enter a URL");
+
+            document.getElementById('jsonOutput').textContent = "Generating...";
+            document.getElementById('output').classList.add('show');
+
+            try {
+                const res = await fetch(`/short?url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+                showResult(data, !res.ok);
+            } catch (e) {
+                showResult({ error: "Network Error", details: e.message }, true);
+            }
+        }
+
+        // --- 2. VERIFY LINK ---
+        async function verifyLink() {
+            const url = document.getElementById('verifyUrlInput').value.trim();
+            if(!url) return alert("Please enter the Ulvis link");
+
+            document.getElementById('jsonOutput').textContent = "Analyzing...";
+            document.getElementById('output').classList.add('show');
+
+            try {
+                const res = await fetch(`/verify?url=${encodeURIComponent(url)}`);
+                const data = await res.json();
+                showResult(data, !res.ok);
+            } catch (e) {
+                showResult({ error: "Network Error", details: e.message }, true);
+            }
+        }
+
+        // --- 3. BULK CREATE ---
+        async function bulkCreate() {
+            const raw = document.getElementById('bulkInput').value.trim();
+            if(!raw) return alert("Please paste some links");
+
+            // Convert newlines to array
+            const urls = raw.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+
+            document.getElementById('jsonOutput').textContent = `Processing ${urls.length} links...`;
+            document.getElementById('output').classList.add('show');
+
+            try {
+                const res = await fetch('/bulk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ urls: urls })
+                });
+                const data = await res.json();
+                showResult(data, !res.ok);
+            } catch (e) {
+                showResult({ error: "Network Error", details: e.message }, true);
+            }
+        }
+    </script>
+</body>
+</html>
